@@ -23,7 +23,7 @@ sub cmd_export {
     );
     foreach my $file (@files) {
         my $task    = App::TimeTracker::Data::Task->load( $file->stringify );
-        say join(';',$task->start, $task->stop, $task->seconds, $task->duration, $task->project, $task->description);
+        say join(';',map { $_ || ''} $task->start, $task->stop, $task->seconds, $task->duration, $task->project, $task->description);
     }
 }
 
