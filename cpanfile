@@ -3,6 +3,7 @@
 
 requires "DateTime" => "0";
 requires "Moose::Role" => "0";
+requires "Text::CSV_XS" => "0";
 requires "perl" => "5.010";
 
 on 'build' => sub {

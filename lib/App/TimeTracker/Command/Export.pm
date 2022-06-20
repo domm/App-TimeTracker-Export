@@ -27,13 +27,26 @@ sub cmd_export {
 
 my @fields = (
     'strftime(start,%F)',
+    'strftime(start,%a)',
     undef,
     undef,
     undef,
-    'duration',
-    'tag(billing)',
-    'join(project,id,description)',
+    'duration(H:M)',
+    'billing',
+    'join({project} {#id} {description})',
 );
+
+    my $do_tmpl = sub {
+        my ($f, $task) = @_;
+        my $acc = $f;
+        $acc =~ s/[^a-z0-9_]//g;
+        my $val = $task->$acc;
+        if ($val) {
+            $f =~ s/$acc/$val/;
+            return $f;
+        };
+        return '';
+    };
 
     my @res;
     foreach my $file (@files) {
@@ -46,7 +59,7 @@ my @fields = (
             elsif ($fld =~/^strftime\((.*?),(.*)\)$/) {
                 push(@line, $task->$1->strftime($2));
             }
-            elsif ($fld =~ /^tag\((.*?)\)$/) {
+            elsif ($fld eq 'billing') {
                 my $p = $self->config->{billing}{prefix};
                 my ($billing) = grep {  /^$p/ } $task->tags->@*;
                 if ($billing) {
@@ -57,9 +70,17 @@ my @fields = (
                     push(@line, $self->config->{export}{billing_default} || '?');
                 }
             }
-            elsif ($fld =~ /^join\((.*?)\)$/) {
-                my @join = split(/,/,$1);
-                push(@line, join(' ', map { $task->$_ || ''} @join));
+            elsif ($fld =~ /^join\((?<def>.*?)\)$/) {
+                my $definition = $+{def};
+                $definition =~ s/{(.*?)}/$do_tmpl->($1, $task)/ge;
+                push(@line, $definition);
+            }
+            elsif ($fld =~ /^duration/) {
+                my $dur = $task->duration;
+                if ($fld eq 'duration(H:M)') {
+                    $dur = substr($dur,0,-3);
+                }
+                push(@line,$dur);
             }
             else {
                 push(@line, $task->$fld);
