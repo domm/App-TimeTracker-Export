@@ -24,17 +24,21 @@ sub cmd_export {
         }
     );
 
+    my $fields = $self->fields;
+    if ($self->config->{export}{fields}) {
+        $fields = $self->config->{export}{fields};
+    }
 
-my @fields = (
-    'strftime(start,%F)',
-    'strftime(start,%a)',
-    undef,
-    undef,
-    undef,
-    'duration(H:M)',
-    'billing',
-    'join({project} {#id} {description})',
-);
+    #my @fields2 = ( #  balloon config
+    #    'strftime(start,%F)',
+    #    'strftime(start,%a)',
+    #    undef,
+    #    undef,
+    #    undef,
+    #    'duration(H:M)',
+    #    'billing',
+    #    'join({project} {#id} {description})',
+    #);
 
     my $do_tmpl = sub {
         my ($f, $task) = @_;
@@ -52,7 +56,7 @@ my @fields = (
     foreach my $file (@files) {
         my $task    = App::TimeTracker::Data::Task->load( $file->stringify );
         my @line;
-        for my $fld (@fields) {
+        for my $fld (@$fields) {
             if (not defined $fld) {
                 push(@line,'');
             }
@@ -76,19 +80,23 @@ my @fields = (
                 push(@line, $definition);
             }
             elsif ($fld =~ /^duration/) {
-                my $dur = $task->duration;
-                if ($fld eq 'duration(H:M)') {
-                    $dur = substr($dur,0,-3);
+                if (my $dur = $task->duration) {
+                    if ($fld eq 'duration(H:M)') {
+                        $dur = substr($dur,0,-3);
+                    }
+                    push(@line,$dur);
                 }
-                push(@line,$dur);
+                else {
+                    push(@line, "current!");
+                }
             }
             else {
                 push(@line, $task->$fld);
             }
 
+
         }
-        push (@res, \@line);
-        #say join(';',map { $_ || ''} $task->start, $task->stop, $task->seconds, $task->duration, $task->project, $task->description, $task->id, join('-',$task->tags->@*));
+        push (@res, [map { $_ || '' } @line]);
     }
 
     say join("\n",map { join(';',@$_) } @res);
@@ -104,7 +112,16 @@ sub _load_attribs_export {
             isa           => enum( [qw(none hase)] ),
             is            => 'ro',
             default       => 'none',
-            documentation => 'Genereta Report by week or project.'
+            documentation => 'Generet a report by week or project.'
+        }
+    );
+
+    $meta->add_attribute(
+        'fields' => {
+            isa           => 'ArrayRef',
+            is            => 'ro',
+            default       => sub {['strftime(start,%F)','duration(H:M)','project','join({#id} {description})']},
+            documentation => 'Export format. Can also be stored in config (which wins!)'
         }
     );
 
