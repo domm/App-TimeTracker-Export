@@ -90,6 +90,9 @@ sub cmd_export {
                     push(@line, "current!");
                 }
             }
+            elsif ($fld =~ /^literal\((.*?)\)$/) {
+                push(@line, $1);
+            }
             else {
                 push(@line, $task->$fld);
             }
