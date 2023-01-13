@@ -71,7 +71,7 @@ sub cmd_export {
                     push(@line,$billing);
                 }
                 else {
-                    push(@line, $self->config->{export}{billing_default} || '?');
+                    push(@line, $self->config->{export}{billing_default} // '?');
                 }
             }
             elsif ($fld =~ /^join\((?<def>.*?)\)$/) {
