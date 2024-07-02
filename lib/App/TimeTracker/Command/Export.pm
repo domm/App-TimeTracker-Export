@@ -29,16 +29,7 @@ sub cmd_export {
         $fields = $self->config->{export}{fields};
     }
 
-    #my @fields2 = ( #  balloon config
-    #    'strftime(start,%F)',
-    #    'strftime(start,%a)',
-    #    undef,
-    #    undef,
-    #    undef,
-    #    'duration(H:M)',
-    #    'billing',
-    #    'join({project} {#id} {description})',
-    #);
+    my $project_map = $self->config->{export}{project_map} || {};
 
     my $do_tmpl = sub {
         my ($f, $task) = @_;
@@ -93,11 +84,12 @@ sub cmd_export {
             elsif ($fld =~ /^literal\((.*?)\)$/) {
                 push(@line, $1);
             }
+            elsif ($fld eq 'project') {
+                push(@line, $project_map->{ $task->project} || $task->project);
+            }
             else {
                 push(@line, $task->$fld);
             }
-
-
         }
         push (@res, [map { $_ || '' } @line]);
     }
