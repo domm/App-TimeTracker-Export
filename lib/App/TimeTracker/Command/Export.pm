@@ -96,7 +96,7 @@ sub cmd_export {
             }
             elsif ($fld eq 'description') {
                 my $desc = $task->$fld;
-                $desc .= ' '.$description_addon if $description_addon;
+                $desc = join(', ', grep { $_ } $desc, $description_addon);
                 push(@line, $desc);
             }
             else {
