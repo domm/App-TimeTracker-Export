@@ -47,6 +47,7 @@ sub cmd_export {
     foreach my $file (@files) {
         my $task    = App::TimeTracker::Data::Task->load( $file->stringify );
         my @line;
+        my $description_addon;
         for my $fld (@$fields) {
             if (not defined $fld) {
                 push(@line,'');
@@ -85,7 +86,18 @@ sub cmd_export {
                 push(@line, $1);
             }
             elsif ($fld eq 'project') {
-                push(@line, $project_map->{ $task->project} || $task->project);
+                my $val =  $task->project;
+                if (my $from_map = $project_map->{ $task->project}) {
+                    my @data = split(/\|/,$from_map);
+                    $val = $data[0];
+                    $description_addon = $data[1] if $data[1];
+                }
+                push(@line, $val);
+            }
+            elsif ($fld eq 'description') {
+                my $desc = $task->$fld;
+                $desc .= ' '.$description_addon if $description_addon;
+                push(@line, $desc);
             }
             else {
                 push(@line, $task->$fld);
